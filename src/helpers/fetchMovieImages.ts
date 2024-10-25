@@ -1,52 +1,71 @@
-import axios from "axios"
+import axios from "axios";
 import { Dispatch, SetStateAction } from "react";
-const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || ''; // Ensure API key is available
+
+const TMDB_API_KEY = process.env.NEXT_PUBLIC_TMDB_API_KEY || '';
+
+// Define the genre IDs you want to filter out.
+// Adjust these based on TMDB documentation for genre IDs.
+const EXCLUDED_GENRE_IDS = [10749, 27, 28]; // Example IDs (Romance, Horror, Action). Adjust accordingly.
 
 interface Movie {
-    poster_path: string | null;
-    title: string;
-    release_date: string;
-    id: number;
-    overview: string;
+  poster_path: string | null;
+  title: string;
+  release_date: string;
+  id: number;
+  overview: string;
+  genre_ids: number[]; // Include genre_ids in the Movie interface
 }
 
-// Function to fetch random movie images from TMDB API
-export const fetchMovieImages = async (count: number, setMovieImages: Dispatch<SetStateAction<string[]>>): Promise<void> => {
-    const imagesPerPage = 20; // TMDB returns a max of 20 movies per page
-    const totalPages = Math.ceil(count / imagesPerPage); // Calculate how many pages to fetch
+// Fetch random movie images from TMDB API
+export const fetchMovieImages = async (
+  count: number,
+  setImages: (images: string[]) => void
+): Promise<void> => {
+  const imagesPerPage = 20;
+  const totalImagesNeeded = count;
+  let allImages: string[] = [];
+  
+  try {
+    // Keep fetching until we have the required number of images
+    let currentPage = 1;
 
-    try {
-        let allImages: string[] = [];
-
-        // Fetch multiple pages in a loop
-        for (let page = 1; page <= totalPages; page++) {
-            const response = await axios.get<{ results: Movie[] }>(
-                `https://api.themoviedb.org/3/movie/popular`,
-                {
-                    params: {
-                        api_key: TMDB_API_KEY,
-                        language: 'en-US',
-                        page: Math.floor(Math.random() * 500) + 1, // Random page number for randomness
-                    },
-                }
-            );
-
-            const newImages = response.data.results
-                .map((movie: Movie) =>
-                    movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null
-                )
-                .filter((image): image is string => image !== null); // Filter out nulls and ensure `image` is string
-
-            allImages = [...allImages, ...newImages];
-
-            // If we already fetched enough images, stop fetching
-            if (allImages.length >= count) {
-                break;
-            }
+    while (allImages.length < totalImagesNeeded) {
+      const response = await axios.get<{ results: Movie[] }>(
+        `https://api.themoviedb.org/3/movie/popular`,
+        {
+          params: {
+            api_key: TMDB_API_KEY,
+            language: "en-US",
+            page: currentPage,
+          },
         }
+      );
 
-        setMovieImages((prevImages) => [...prevImages, ...allImages.slice(0, count)]);
-    } catch (error) {
-        console.error('Error fetching movie images:', error);
+      const newImages = response.data.results
+        .filter((movie: Movie) => 
+          !movie.genre_ids.some(genreId => EXCLUDED_GENRE_IDS.includes(genreId)) // Exclude unwanted genres
+        )
+        .map((movie: Movie) =>
+          movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null
+        )
+        .filter((image): image is string => image !== null);
+
+      // Add the new images to the collection
+      allImages = [...allImages, ...newImages];
+
+      // If we have collected enough images, break the loop
+      if (allImages.length >= totalImagesNeeded) break;
+
+      // Increment the page number to fetch the next set of movies
+      currentPage++;
+
+      // Check if we've reached a reasonable page limit to avoid endless loops
+      if (currentPage > 500) break; // TMDB API has 500 pages available
     }
+
+    // Set the images ensuring only the required count
+    setImages(allImages.slice(0, totalImagesNeeded));
+  } catch (error) {
+    console.error("Error fetching movie images:", error);
+  }
 };

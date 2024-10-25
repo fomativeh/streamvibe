@@ -9,8 +9,19 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+         black_01:"#141414",
+         black_02:"#1A1A1A",
+         grey_01:"#999999",
+         red_01:"#E50000"
+      },
+      keyframes: {
+        slideLeftCentered: {
+          '0%': { transform: 'translateX(0%)' }, // Start at center
+          '100%': { transform: 'translateX(-100%)' }, // Move left
+        },
+      },
+      animation: {
+        slideLeftSlow: 'slideLeftCentered 50s linear infinite',
       },
     },
   },

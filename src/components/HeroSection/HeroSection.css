@@ -1,0 +1,25 @@
+@keyframes rowSlide {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-100%);
+    }
+  }
+  
+  .image-row {
+    display: flex;
+    flex-direction: row;
+    animation: rowSlide linear infinite;
+    animation-duration: var(--row-animation-duration);
+  }
+  
+  /* Add this to your CSS file */
+.fade-top-to-bottom {
+    background: linear-gradient(180deg, rgba(20, 20, 20, 1) 0%, rgba(20, 20, 20, 0) 100%);
+  }
+  
+  .fade-bottom-to-top {
+    background: linear-gradient(0deg, rgba(20, 20, 20, 1) 0%, rgba(20, 20, 20, 0) 100%);
+  }
+  
